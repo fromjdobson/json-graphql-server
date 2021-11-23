@@ -1,33 +1,35 @@
 #!/usr/bin/env node
 require('reify');
-var path = require('path');
-var express = require('express');
-var cors = require('cors');
-var JsonGraphqlServer = require('../lib/json-graphql-server.node.min').default;
+const path = require('path');
+const express = require('express');
+const cors = require('cors');
+const ARGS = require('./getArgs');
+const openBrowser = require('./browser-opener');
+const {
+    STARTING,
+    DATAFROM,
+    STARTED,
+    BROWSEROPEN,
+    REJECTION,
+} = require('./console-messages');
 
-var dataFilePath = process.argv.length > 2 ? process.argv[2] : './example/data.js';
-var data = require(path.join(process.cwd(), dataFilePath));
-var PORT = process.env.NODE_PORT || 3000;
-var HOST = process.env.NODE_HOST || 'localhost';
-var app = express();
+STARTING();
+const JsonGraphqlServer = require('../lib/json-graphql-server.node.min');
+const DATAFILE = process.argv[2] || './example/data.js';
+const HOST = ARGS.host || ARGS.h || process.env.NODE_HOST || 'localhost';
+const PORT = ARGS.port || ARGS.p || process.env.NODE_PORT || 3000;
+const URL = `http://${HOST}:${PORT}/`;
 
-process.argv.forEach((arg, index) => {
-  // allow a custom port via CLI
-  if (arg === '--p' && process.argv.length > index + 1) {
-    PORT = process.argv[index + 1];
-  }
-
-  if (arg === '--h' && process.argv.length > index + 1) {
-    HOST = process.argv[index + 1];
-  }
-});
+const dataPath = path.join(process.cwd(), DATAFILE);
+const data = require(dataPath);
+const app = express();
+DATAFROM(dataPath);
 
 app.use(cors());
-app.use('/', JsonGraphqlServer(data));
+app.use('/', JsonGraphqlServer.default(data));
 app.listen(PORT, HOST);
-var msg = `GraphQL server running with your data at http://${HOST}:${PORT}/`;
-console.log(msg); // eslint-disable-line no-console
+STARTED(URL);
 
-process.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-});
+openBrowser(URL) && BROWSEROPEN(URL);
+
+process.on('unhandledRejection', REJECTION);
