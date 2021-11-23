@@ -16,6 +16,7 @@
     ],
     "license": "MIT",
     "scripts": {
+        "start":"make",
         "format": "make format",
         "precommit": "lint-staged",
         "test": "jest",
